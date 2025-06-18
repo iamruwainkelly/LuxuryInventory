@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(243, 75%, 59%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+  --chart-1: hsl(243, 75%, 59%);
+  --chart-2: hsl(151, 55%, 41.5%);
+  --chart-3: hsl(48, 96%, 53%);
+  --chart-4: hsl(0, 72%, 51%);
+  --chart-5: hsl(280, 87%, 65%);
+  --sidebar-background: hsl(240, 10%, 3.9%);
+  --sidebar-foreground: hsl(0, 0%, 98%);
+  --sidebar-primary: hsl(243, 75%, 59%);
+  --sidebar-primary-foreground: hsl(0, 0%, 98%);
+  --sidebar-accent: hsl(240, 3.7%, 15.9%);
+  --sidebar-accent-foreground: hsl(0, 0%, 98%);
+  --sidebar-border: hsl(240, 3.7%, 15.9%);
+  --sidebar-ring: hsl(240, 4.9%, 83.9%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+}
+
+@layer components {
+  .gradient-bg {
+    background: linear-gradient(-45deg, hsl(240, 10%, 3.9%), hsl(224, 64%, 16%), hsl(243, 75%, 59%), hsl(226, 71%, 40%));
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+
+  .glass-card {
+    background: hsla(224, 64%, 16%, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsla(0, 0%, 100%, 0.1);
+  }
+
+  .glass-card-light {
+    background: hsla(217, 32%, 17%, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid hsla(0, 0%, 100%, 0.05);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(48, 96%, 53%), hsl(45, 93%, 47%), hsl(38, 92%, 50%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .sidebar-nav {
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-nav:hover {
+    background: hsla(243, 75%, 59%, 0.1);
+    border-left: 3px solid hsl(243, 75%, 59%);
+  }
+
+  .sidebar-nav.active {
+    background: hsla(243, 75%, 59%, 0.2);
+    border-left: 3px solid hsl(243, 75%, 59%);
+  }
+
+  .metric-card {
+    transition: all 0.3s ease;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px hsla(0, 0%, 0%, 0.3);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, hsl(243, 75%, 59%), hsl(226, 71%, 40%));
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, hsl(243, 75%, 49%), hsl(226, 71%, 30%));
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px hsla(243, 75%, 59%, 0.3);
+  }
+
+  .table-row {
+    transition: all 0.2s ease;
+  }
+
+  .table-row:hover {
+    background: hsla(243, 75%, 59%, 0.05);
+  }
+
+  .loading-spinner {
+    border: 3px solid hsla(0, 0%, 100%, 0.1);
+    border-top: 3px solid hsl(243, 75%, 59%);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes gradient {
+  0%, 100% { 
+    background-position: 0% 50%; 
+  }
+  50% { 
+    background-position: 100% 50%; 
+  }
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+  }
+  50% { 
+    transform: translateY(-10px); 
+  }
+}
+
+@keyframes spin {
+  0% { 
+    transform: rotate(0deg); 
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.animate-float-delayed-2 {
+  animation: float 6s ease-in-out infinite;
+  animation-delay: 4s;
+}
