@@ -1,0 +1,53 @@
+Build a fully functional, luxury-themed inventory management system using Vue.js 3 with Vite, Tailwind CSS, Recharts (or Chart.js), and a Python FastAPI backend.
+
+🌐 Frontend (Vue):
+- Dark glassmorphism theme with animated gradient backgrounds
+- Convex Auth or Firebase Auth with login page and role-based routing
+- Dashboard with:
+  - Total Products, Total Clients, Low Stock Alerts, Monthly Revenue cards
+  - Bar chart (stock movement by month)
+  - Line chart (inventory value over time)
+  - Pie chart (stock by category/supplier)
+  - Filters: by date, category, supplier
+  - Live search
+
+📦 Product Management:
+- /products route
+- Table with sortable columns and pagination
+- Modal or drawer for Add/Edit Product (SKU, Name, Category, Supplier, Cost, Price, Stock, MinStock, Barcode)
+- Delete confirmation
+- Live validation and toast feedback
+
+👤 Client & Supplier Management:
+- /clients and /suppliers
+- Forms to add/edit contact details, notes
+- Table views with history and order links
+
+📈 Stock & Orders:
+- Add/Remove Stock with auto timestamp and logged user
+- Stock movement log route with filters
+- Sales and Purchase Orders with item lists, totals, and status
+- PDF invoice generation (via backend)
+- Email alerts when stock < minStock
+
+📊 Charts (via Recharts or Chart.js):
+- Animated charts with dynamic data from API
+- Responsive, mobile-first layout
+
+🔐 Backend (Python FastAPI):
+- PostgreSQL schema with tables: Products, Clients, Suppliers, Orders, StockMovements, Users
+- REST API with CRUD endpoints
+- Endpoints for:
+  - /products, /orders, /clients, /suppliers
+  - /stats/dashboard, /stock/log, /alerts/lowstock
+  - /email/alert and /pdf/invoice
+- Swagger UI enabled
+- Email integration using SMTP or SendGrid
+
+🧪 Extras:
+- Create a `seed.py` script to generate demo data using Faker (20 products, 5 clients, 5 suppliers)
+- Environment files for backend/frontend
+- Unified error handling on both ends
+- Fully responsive UI
+
+Focus on clear folder structure, modular components, and strong TypeScript types (for frontend). Begin with scaffolded dashboard + charts and product management. Ensure everything renders correctly on http://localhost:3000.
