@@ -11,6 +11,7 @@ import {
   Building,
   Settings,
   Wrench,
+  Plug,
   User
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ const navigation = [
   { name: "AI Insights", href: "/ai-insights", icon: Brain },
   { name: "Warehouse", href: "/warehouse", icon: Building },
   { name: "Returns & Repairs", href: "/returns-repairs", icon: Wrench },
+  { name: "Integration", href: "/integration", icon: Plug },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

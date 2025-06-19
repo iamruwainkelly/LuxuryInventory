@@ -14,6 +14,7 @@ import Reports from "@/pages/reports";
 import Warehouse from "@/pages/warehouse";
 import AIInsights from "@/pages/ai-insights";
 import ReturnsRepairs from "@/pages/returns-repairs";
+import IntegrationSettings from "@/pages/integration-settings";
 import Settings from "@/pages/settings";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
@@ -45,6 +46,7 @@ function Router() {
               <Route path="/warehouse" component={Warehouse} />
               <Route path="/ai-insights" component={AIInsights} />
               <Route path="/returns-repairs" component={ReturnsRepairs} />
+              <Route path="/integration" component={IntegrationSettings} />
               <Route path="/settings" component={Settings} />
               <Route component={NotFound} />
             </Switch>
