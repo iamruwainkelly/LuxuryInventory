@@ -12,6 +12,7 @@ import Orders from "@/pages/orders";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
 import Warehouse from "@/pages/warehouse";
+import Sales from "@/pages/sales";
 import AIInsights from "@/pages/ai-insights";
 import ReturnsRepairs from "@/pages/returns-repairs";
 import IntegrationSettings from "@/pages/integration-settings";
@@ -44,6 +45,7 @@ function Router() {
               <Route path="/analytics" component={Analytics} />
               <Route path="/reports" component={Reports} />
               <Route path="/warehouse" component={Warehouse} />
+              <Route path="/sales" component={Sales} />
               <Route path="/ai-insights" component={AIInsights} />
               <Route path="/returns-repairs" component={ReturnsRepairs} />
               <Route path="/integration" component={IntegrationSettings} />
