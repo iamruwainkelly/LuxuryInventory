@@ -1,5 +1,6 @@
 import {
   users, suppliers, clients, products, categories, stockMovements, orders, orderItems,
+  repairs, returns, deviceReplacements, financialTransactions, salesProjections, warehouseLocations,
   type User, type InsertUser,
   type Supplier, type InsertSupplier,
   type Client, type InsertClient,
@@ -7,7 +8,13 @@ import {
   type Category, type InsertCategory,
   type StockMovement, type InsertStockMovement,
   type Order, type InsertOrder,
-  type OrderItem, type InsertOrderItem
+  type OrderItem, type InsertOrderItem,
+  type Repair, type InsertRepair,
+  type Return, type InsertReturn,
+  type DeviceReplacement, type InsertDeviceReplacement,
+  type FinancialTransaction, type InsertFinancialTransaction,
+  type SalesProjection, type InsertSalesProjection,
+  type WarehouseLocation, type InsertWarehouseLocation
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -66,6 +73,33 @@ export interface IStorage {
     lowStockAlerts: number;
     monthlyRevenue: number;
   }>;
+
+  // Repairs
+  getRepairs(): Promise<Repair[]>;
+  getRepair(id: number): Promise<Repair | undefined>;
+  createRepair(repair: InsertRepair): Promise<Repair>;
+  updateRepair(id: number, repair: Partial<InsertRepair>): Promise<Repair | undefined>;
+
+  // Returns
+  getReturns(): Promise<Return[]>;
+  getReturn(id: number): Promise<Return | undefined>;
+  createReturn(returnItem: InsertReturn): Promise<Return>;
+
+  // Device Replacements
+  getDeviceReplacements(): Promise<DeviceReplacement[]>;
+  createDeviceReplacement(replacement: InsertDeviceReplacement): Promise<DeviceReplacement>;
+
+  // Financial Transactions
+  getFinancialTransactions(): Promise<FinancialTransaction[]>;
+  createFinancialTransaction(transaction: InsertFinancialTransaction): Promise<FinancialTransaction>;
+
+  // Sales Projections
+  getSalesProjections(): Promise<SalesProjection[]>;
+  createSalesProjection(projection: InsertSalesProjection): Promise<SalesProjection>;
+
+  // Warehouse Locations
+  getWarehouseLocations(): Promise<WarehouseLocation[]>;
+  createWarehouseLocation(location: InsertWarehouseLocation): Promise<WarehouseLocation>;
 }
 
 export class MemStorage implements IStorage {
@@ -723,6 +757,103 @@ export class DatabaseStorage implements IStorage {
       lowStockAlerts: lowStockProducts.length,
       monthlyRevenue: Math.round(monthlyRevenue),
     };
+  }
+
+  // Repairs
+  async getRepairs(): Promise<Repair[]> {
+    return await db.select().from(repairs);
+  }
+
+  async getRepair(id: number): Promise<Repair | undefined> {
+    const [repair] = await db.select().from(repairs).where(eq(repairs.id, id));
+    return repair || undefined;
+  }
+
+  async createRepair(repair: InsertRepair): Promise<Repair> {
+    const [newRepair] = await db
+      .insert(repairs)
+      .values(repair)
+      .returning();
+    return newRepair;
+  }
+
+  async updateRepair(id: number, repair: Partial<InsertRepair>): Promise<Repair | undefined> {
+    const [updated] = await db
+      .update(repairs)
+      .set(repair)
+      .where(eq(repairs.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Returns
+  async getReturns(): Promise<Return[]> {
+    return await db.select().from(returns);
+  }
+
+  async getReturn(id: number): Promise<Return | undefined> {
+    const [returnItem] = await db.select().from(returns).where(eq(returns.id, id));
+    return returnItem || undefined;
+  }
+
+  async createReturn(returnItem: InsertReturn): Promise<Return> {
+    const [newReturn] = await db
+      .insert(returns)
+      .values(returnItem)
+      .returning();
+    return newReturn;
+  }
+
+  // Device Replacements
+  async getDeviceReplacements(): Promise<DeviceReplacement[]> {
+    return await db.select().from(deviceReplacements);
+  }
+
+  async createDeviceReplacement(replacement: InsertDeviceReplacement): Promise<DeviceReplacement> {
+    const [newReplacement] = await db
+      .insert(deviceReplacements)
+      .values(replacement)
+      .returning();
+    return newReplacement;
+  }
+
+  // Financial Transactions
+  async getFinancialTransactions(): Promise<FinancialTransaction[]> {
+    return await db.select().from(financialTransactions);
+  }
+
+  async createFinancialTransaction(transaction: InsertFinancialTransaction): Promise<FinancialTransaction> {
+    const [newTransaction] = await db
+      .insert(financialTransactions)
+      .values(transaction)
+      .returning();
+    return newTransaction;
+  }
+
+  // Sales Projections
+  async getSalesProjections(): Promise<SalesProjection[]> {
+    return await db.select().from(salesProjections);
+  }
+
+  async createSalesProjection(projection: InsertSalesProjection): Promise<SalesProjection> {
+    const [newProjection] = await db
+      .insert(salesProjections)
+      .values(projection)
+      .returning();
+    return newProjection;
+  }
+
+  // Warehouse Locations
+  async getWarehouseLocations(): Promise<WarehouseLocation[]> {
+    return await db.select().from(warehouseLocations);
+  }
+
+  async createWarehouseLocation(location: InsertWarehouseLocation): Promise<WarehouseLocation> {
+    const [newLocation] = await db
+      .insert(warehouseLocations)
+      .values(location)
+      .returning();
+    return newLocation;
   }
 }
 

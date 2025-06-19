@@ -1,5 +1,5 @@
 import { db } from './db';
-import { users, categories, suppliers, clients, products, stockMovements, orders } from '@shared/schema';
+import { users, categories, suppliers, clients, products, stockMovements, orders, warehouseLocations, financialTransactions, repairs, salesProjections } from '@shared/schema';
 
 export async function seedDatabase() {
   try {
@@ -162,6 +162,94 @@ export async function seedDatabase() {
         quantity: 5,
         reason: "Quality control issue",
         userId: 1,
+      },
+    ]).onConflictDoNothing();
+
+    // Seed warehouse locations
+    await db.insert(warehouseLocations).values([
+      {
+        zone: "A",
+        aisle: "01",
+        shelf: "A",
+        bin: "001",
+        capacity: 100,
+        currentOccupancy: 85,
+      },
+      {
+        zone: "A",
+        aisle: "01", 
+        shelf: "B",
+        bin: "002",
+        capacity: 100,
+        currentOccupancy: 45,
+      },
+      {
+        zone: "B",
+        aisle: "02",
+        shelf: "A", 
+        bin: "001",
+        capacity: 150,
+        currentOccupancy: 120,
+      },
+    ]).onConflictDoNothing();
+
+    // Seed financial transactions
+    await db.insert(financialTransactions).values([
+      {
+        transactionType: "sale",
+        amount: "1199.00",
+        description: "iPhone 15 Pro Max sale",
+        referenceId: 1,
+        referenceType: "order",
+        paymentMethod: "credit_card",
+      },
+      {
+        transactionType: "purchase",
+        amount: "999.00",
+        description: "iPhone 15 Pro Max purchase from supplier",
+        referenceId: 2,
+        referenceType: "order", 
+        paymentMethod: "bank_transfer",
+      },
+    ]).onConflictDoNothing();
+
+    // Seed repairs
+    await db.insert(repairs).values([
+      {
+        productId: 1,
+        clientId: 1,
+        issueDescription: "Screen replacement needed",
+        repairStatus: "in_progress",
+        estimatedCost: "299.00",
+        warrantyRepair: false,
+      },
+      {
+        productId: 2,
+        clientId: 2,
+        issueDescription: "Keyboard malfunction",
+        repairStatus: "pending",
+        estimatedCost: "150.00",
+        warrantyRepair: true,
+      },
+    ]).onConflictDoNothing();
+
+    // Seed sales projections
+    await db.insert(salesProjections).values([
+      {
+        productId: 1,
+        projectionPeriod: "monthly",
+        projectedSales: 25,
+        projectedRevenue: "29975.00",
+        confidence: "85.5",
+        baselineData: JSON.stringify({ historicalSales: [20, 22, 18, 25, 23] }),
+      },
+      {
+        productId: 2,
+        projectionPeriod: "monthly", 
+        projectedSales: 15,
+        projectedRevenue: "22485.00",
+        confidence: "78.2",
+        baselineData: JSON.stringify({ historicalSales: [12, 14, 16, 15, 13] }),
       },
     ]).onConflictDoNothing();
 

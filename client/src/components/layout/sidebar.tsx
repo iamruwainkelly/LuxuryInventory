@@ -5,7 +5,10 @@ import {
   Users, 
   Truck, 
   ClipboardList, 
-  BarChart3, 
+  BarChart3,
+  FileText,
+  Brain,
+  Building,
   Settings,
   User
 } from "lucide-react";
@@ -17,6 +20,9 @@ const navigation = [
   { name: "Suppliers", href: "/suppliers", icon: Truck },
   { name: "Orders", href: "/orders", icon: ClipboardList },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Reports", href: "/reports", icon: FileText },
+  { name: "AI Insights", href: "/ai-insights", icon: Brain },
+  { name: "Warehouse", href: "/warehouse", icon: Building },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
