@@ -133,37 +133,54 @@ export async function seedDatabase() {
       },
     ]).onConflictDoNothing();
 
-    // Seed stock movements
-    await db.insert(stockMovements).values([
-      {
-        productId: 1,
-        movementType: "in",
-        quantity: 50,
-        reason: "Initial stock",
-        userId: 1,
-      },
-      {
-        productId: 2,
-        movementType: "in",
-        quantity: 25,
-        reason: "Supplier delivery",
-        userId: 1,
-      },
-      {
-        productId: 1,
-        movementType: "out",
-        quantity: 3,
-        reason: "Sale to customer",
-        userId: 1,
-      },
-      {
-        productId: 3,
-        movementType: "out",
-        quantity: 5,
-        reason: "Quality control issue",
-        userId: 1,
-      },
-    ]).onConflictDoNothing();
+    // Seed 3 years of historical stock movements
+    const stockMovementsData = [];
+    const startDate = new Date('2022-01-01');
+    const endDate = new Date();
+    
+    // Generate monthly stock movements for 3 years
+    for (let productId = 1; productId <= 4; productId++) {
+      let currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        // Stock in movements (2-4 per month)
+        const inMovements = Math.floor(Math.random() * 3) + 2;
+        for (let i = 0; i < inMovements; i++) {
+          const dayOffset = Math.floor(Math.random() * 28);
+          const movementDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayOffset + 1);
+          
+          stockMovementsData.push({
+            productId,
+            movementType: "in",
+            quantity: Math.floor(Math.random() * 50) + 10,
+            reason: ["Supplier delivery", "Restock", "Initial inventory", "Purchase order"][Math.floor(Math.random() * 4)],
+            userId: 1,
+            createdAt: movementDate,
+          });
+        }
+        
+        // Stock out movements (3-8 per month)
+        const outMovements = Math.floor(Math.random() * 6) + 3;
+        for (let i = 0; i < outMovements; i++) {
+          const dayOffset = Math.floor(Math.random() * 28);
+          const movementDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayOffset + 1);
+          
+          stockMovementsData.push({
+            productId,
+            movementType: "out",
+            quantity: Math.floor(Math.random() * 15) + 1,
+            reason: ["Sale to customer", "Internal use", "Quality control", "Damage", "Return"][Math.floor(Math.random() * 5)],
+            userId: 1,
+            createdAt: movementDate,
+          });
+        }
+        
+        // Move to next month
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
+    }
+    
+    await db.insert(stockMovements).values(stockMovementsData).onConflictDoNothing();
 
     // Seed warehouse locations
     await db.insert(warehouseLocations).values([
@@ -193,25 +210,34 @@ export async function seedDatabase() {
       },
     ]).onConflictDoNothing();
 
-    // Seed financial transactions
-    await db.insert(financialTransactions).values([
-      {
-        transactionType: "sale",
-        amount: "1199.00",
-        description: "iPhone 15 Pro Max sale",
-        referenceId: 1,
-        referenceType: "order",
-        paymentMethod: "credit_card",
-      },
-      {
-        transactionType: "purchase",
-        amount: "999.00",
-        description: "iPhone 15 Pro Max purchase from supplier",
-        referenceId: 2,
-        referenceType: "order", 
-        paymentMethod: "bank_transfer",
-      },
-    ]).onConflictDoNothing();
+    // Seed 3 years of financial transactions
+    const transactionsData = [];
+    
+    for (let year = 2022; year <= 2024; year++) {
+      for (let month = 0; month < 12; month++) {
+        if (year === 2024 && month > new Date().getMonth()) break;
+        
+        const transactionCount = Math.floor(Math.random() * 20) + 10;
+        
+        for (let i = 0; i < transactionCount; i++) {
+          const day = Math.floor(Math.random() * 28) + 1;
+          const transactionDate = new Date(year, month, day);
+          const transactionType = Math.random() > 0.6 ? "purchase" : "sale";
+          
+          transactionsData.push({
+            transactionType,
+            amount: (Math.random() * 3000 + 50).toFixed(2),
+            description: `${transactionType === "sale" ? "Product sale" : "Supplier purchase"} - ${transactionDate.toDateString()}`,
+            referenceId: Math.floor(Math.random() * 100) + 1,
+            referenceType: "order",
+            paymentMethod: ["credit_card", "bank_transfer", "cash", "check"][Math.floor(Math.random() * 4)],
+            createdAt: transactionDate,
+          });
+        }
+      }
+    }
+    
+    await db.insert(financialTransactions).values(transactionsData).onConflictDoNothing();
 
     // Seed repairs
     await db.insert(repairs).values([
