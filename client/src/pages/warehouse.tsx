@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,20 @@ export default function Warehouse() {
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedZone, setSelectedZone] = useState("");
   
-  const warehouseLocations: WarehouseLocation[] = [
+  const { data: warehouseLocations = [], isLoading } = useQuery({
+    queryKey: ["/api/warehouse/locations"],
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["/api/products"],
+  });
+
+  const { data: stockMovements = [] } = useQuery({
+    queryKey: ["/api/stock/movements"],
+  });
+
+  // Mock data for demonstration - in real app this would come from API
+  const mockWarehouseLocations: WarehouseLocation[] = [
     {
       id: "1",
       zone: "A",
@@ -157,13 +171,15 @@ export default function Warehouse() {
     }
   };
 
-  const filteredLocations = warehouseLocations.filter(location => {
+  const displayLocations = warehouseLocations.length > 0 ? warehouseLocations : mockWarehouseLocations;
+
+  const filteredLocations = displayLocations.filter((location: any) => {
     const searchTerm = searchLocation.toLowerCase();
     const locationString = `${location.zone}-${location.aisle}-${location.shelf}-${location.bin}`.toLowerCase();
-    const zoneMatch = selectedZone === "" || location.zone === selectedZone;
+    const zoneMatch = selectedZone === "" || selectedZone === "all" || location.zone === selectedZone;
     const searchMatch = searchLocation === "" || 
       locationString.includes(searchTerm) ||
-      location.products.some(p => p.name.toLowerCase().includes(searchTerm) || p.sku.toLowerCase().includes(searchTerm));
+      (location.products && location.products.some((p: any) => p.name.toLowerCase().includes(searchTerm) || p.sku.toLowerCase().includes(searchTerm)));
     
     return zoneMatch && searchMatch;
   });
@@ -211,7 +227,7 @@ export default function Warehouse() {
                         <SelectValue placeholder="All Zones" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Zones</SelectItem>
+                        <SelectItem value="all">All Zones</SelectItem>
                         <SelectItem value="A">Zone A</SelectItem>
                         <SelectItem value="B">Zone B</SelectItem>
                         <SelectItem value="C">Zone C</SelectItem>
@@ -230,9 +246,11 @@ export default function Warehouse() {
 
             {/* Location Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredLocations.map((location) => {
-                const occupancyPercentage = (location.occupied / location.capacity) * 100;
-                const occupancyLevel = getOccupancyLevel(location.occupied, location.capacity);
+              {filteredLocations.map((location: any) => {
+                const occupied = location.currentOccupancy || location.occupied || 0;
+                const capacity = location.capacity || 100;
+                const occupancyPercentage = (occupied / capacity) * 100;
+                const occupancyLevel = getOccupancyLevel(occupied, capacity);
                 
                 return (
                   <Card key={location.id} className="bg-black/30 backdrop-blur-sm border-white/10">
@@ -251,7 +269,7 @@ export default function Warehouse() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm text-gray-300">
                           <span>Capacity</span>
-                          <span>{location.occupied}/{location.capacity}</span>
+                          <span>{occupied}/{capacity}</span>
                         </div>
                         <Progress 
                           value={occupancyPercentage} 

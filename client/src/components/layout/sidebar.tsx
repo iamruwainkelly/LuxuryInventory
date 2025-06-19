@@ -10,6 +10,7 @@ import {
   Brain,
   Building,
   Settings,
+  Wrench,
   User
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Reports", href: "/reports", icon: FileText },
   { name: "AI Insights", href: "/ai-insights", icon: Brain },
   { name: "Warehouse", href: "/warehouse", icon: Building },
+  { name: "Returns & Repairs", href: "/returns-repairs", icon: Wrench },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

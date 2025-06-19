@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, TrendingUp, Package, DollarSign, AlertTriangle, BarChart3, Download, Filter } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { addDays, format } from "date-fns";
+import { generatePDFReport, generateExcelReport, formatCurrency, formatDate } from "@/lib/reportUtils";
 
 interface ReportData {
   id: string;
@@ -18,6 +20,7 @@ interface ReportData {
   generatedAt: string;
   status: 'ready' | 'generating' | 'error';
   downloadUrl?: string;
+  reportData?: any;
 }
 
 export default function Reports() {
@@ -117,25 +120,199 @@ export default function Reports() {
     },
   ];
 
+  const { data: stockData } = useQuery({
+    queryKey: ["/api/reports/stock-summary"],
+    enabled: false,
+  });
+
+  const { data: financialData } = useQuery({
+    queryKey: ["/api/reports/financial"],
+    enabled: false,
+  });
+
+  const { data: aiProjections } = useQuery({
+    queryKey: ["/api/reports/ai-projections"],
+    enabled: false,
+  });
+
+  const { data: products } = useQuery({
+    queryKey: ["/api/products"],
+    enabled: false,
+  });
+
+  const { data: orders } = useQuery({
+    queryKey: ["/api/orders"],
+    enabled: false,
+  });
+
+  const { data: movements } = useQuery({
+    queryKey: ["/api/stock/movements"],
+    enabled: false,
+  });
+
   const handleGenerateReport = async () => {
     if (!reportType) return;
     
     setIsGenerating(true);
     
-    // Simulate report generation
-    setTimeout(() => {
+    try {
+      let reportData;
       const selectedReportType = reportTypes.find(rt => rt.id === reportType);
+      
+      switch (reportType) {
+        case 'stock-movement':
+          const movementsResponse = await fetch('/api/stock/movements');
+          const movementsData = await movementsResponse.json();
+          const productsResponse = await fetch('/api/products');
+          const productsData = await productsResponse.json();
+          
+          reportData = {
+            title: 'Stock Movement Report',
+            data: movementsData.map((movement: any) => {
+              const product = productsData.find((p: any) => p.id === movement.productId);
+              return {
+                date: formatDate(movement.createdAt),
+                product: product?.name || 'Unknown',
+                sku: product?.sku || 'N/A',
+                type: movement.movementType,
+                quantity: movement.quantity,
+                reason: movement.reason || 'N/A',
+              };
+            }),
+            columns: [
+              { header: 'Date', dataKey: 'date' },
+              { header: 'Product', dataKey: 'product' },
+              { header: 'SKU', dataKey: 'sku' },
+              { header: 'Type', dataKey: 'type' },
+              { header: 'Quantity', dataKey: 'quantity' },
+              { header: 'Reason', dataKey: 'reason' },
+            ],
+          };
+          break;
+
+        case 'inventory-valuation':
+          const stockResponse = await fetch('/api/reports/stock-summary');
+          const stockSummaryData = await stockResponse.json();
+          
+          const totalValue = stockSummaryData.reduce((sum: number, item: any) => sum + item.stockValue, 0);
+          
+          reportData = {
+            title: 'Inventory Valuation Report',
+            data: stockSummaryData.map((item: any) => ({
+              sku: item.sku,
+              name: item.name,
+              currentStock: item.currentStock || 0,
+              costPrice: formatCurrency(item.costPrice || 0),
+              stockValue: formatCurrency(item.stockValue || 0),
+              turnover: (item.stockTurnover || 0).toFixed(2),
+            })),
+            columns: [
+              { header: 'SKU', dataKey: 'sku' },
+              { header: 'Product Name', dataKey: 'name' },
+              { header: 'Stock Qty', dataKey: 'currentStock' },
+              { header: 'Cost Price', dataKey: 'costPrice' },
+              { header: 'Stock Value', dataKey: 'stockValue' },
+              { header: 'Turnover Rate', dataKey: 'turnover' },
+            ],
+            summary: {
+              'Total Inventory Value': formatCurrency(totalValue),
+              'Total Products': stockSummaryData.length,
+              'Average Stock Value': formatCurrency(totalValue / stockSummaryData.length),
+            },
+          };
+          break;
+
+        case 'financial-summary':
+          const financialResponse = await fetch('/api/reports/financial');
+          const financialReportData = await financialResponse.json();
+          
+          reportData = {
+            title: 'Financial Summary Report',
+            data: [{
+              metric: 'Sales Revenue',
+              amount: formatCurrency(financialReportData.salesRevenue),
+              percentage: '100%',
+            }, {
+              metric: 'Purchase Costs',
+              amount: formatCurrency(financialReportData.purchaseCosts),
+              percentage: ((financialReportData.purchaseCosts / financialReportData.salesRevenue) * 100).toFixed(1) + '%',
+            }, {
+              metric: 'Gross Profit',
+              amount: formatCurrency(financialReportData.grossProfit),
+              percentage: financialReportData.profitMargin.toFixed(1) + '%',
+            }],
+            columns: [
+              { header: 'Metric', dataKey: 'metric' },
+              { header: 'Amount', dataKey: 'amount' },
+              { header: 'Percentage', dataKey: 'percentage' },
+            ],
+            summary: {
+              'Profit Margin': `${financialReportData.profitMargin.toFixed(2)}%`,
+              'Total Transactions': formatCurrency(financialReportData.totalTransactions),
+            },
+          };
+          break;
+
+        case 'ai-projections':
+          const projectionsResponse = await fetch('/api/reports/ai-projections');
+          const projectionsData = await projectionsResponse.json();
+          
+          reportData = {
+            title: 'AI Sales Projections Report',
+            data: projectionsData.map((proj: any) => ({
+              product: proj.productName,
+              period: proj.projectionPeriod,
+              projectedSales: proj.projectedSales,
+              projectedRevenue: formatCurrency(proj.projectedRevenue),
+              confidence: `${proj.confidence}%`,
+              reorderRecommendation: proj.reorderRecommendation || 'None',
+            })),
+            columns: [
+              { header: 'Product', dataKey: 'product' },
+              { header: 'Period', dataKey: 'period' },
+              { header: 'Projected Sales', dataKey: 'projectedSales' },
+              { header: 'Projected Revenue', dataKey: 'projectedRevenue' },
+              { header: 'Confidence', dataKey: 'confidence' },
+              { header: 'Reorder Rec.', dataKey: 'reorderRecommendation' },
+            ],
+          };
+          break;
+
+        default:
+          reportData = {
+            title: selectedReportType?.name || 'Custom Report',
+            data: [{ message: 'Report data not available yet' }],
+            columns: [{ header: 'Status', dataKey: 'message' }],
+          };
+      }
+
       const newReport: ReportData = {
         id: Date.now().toString(),
         name: `${selectedReportType?.name} - ${format(new Date(), "MMMM yyyy")}`,
         type: reportType,
         generatedAt: format(new Date(), "yyyy-MM-dd HH:mm"),
         status: "ready",
+        reportData,
       };
       
       setRecentReports([newReport, ...recentReports]);
+    } catch (error) {
+      console.error('Error generating report:', error);
+    } finally {
       setIsGenerating(false);
-    }, 3000);
+    }
+  };
+
+  const handleDownloadPDF = (report: ReportData) => {
+    if (report.reportData) {
+      generatePDFReport(report.reportData);
+    }
+  };
+
+  const handleDownloadExcel = (report: ReportData) => {
+    if (report.reportData) {
+      generateExcelReport(report.reportData);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -285,10 +462,26 @@ export default function Reports() {
                       <div className="flex items-center gap-3">
                         {getStatusBadge(report.status)}
                         {report.status === 'ready' && (
-                          <Button variant="outline" size="sm" className="border-white/10">
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="border-white/10"
+                              onClick={() => handleDownloadPDF(report)}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              PDF
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="border-white/10"
+                              onClick={() => handleDownloadExcel(report)}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Excel
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
