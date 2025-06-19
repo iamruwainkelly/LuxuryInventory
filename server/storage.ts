@@ -50,6 +50,7 @@ export interface IStorage {
   getOrders(): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined>;
   updateOrderStatus(id: number, status: string): Promise<Order | undefined>;
 
   // Order Items
@@ -215,7 +216,79 @@ export class MemStorage implements IStorage {
       this.products.set(product.id, product);
     });
 
-    this.currentId = 5;
+    // Seed orders
+    const order1: Order = {
+      id: 1,
+      orderNumber: "ORD-001",
+      clientId: 1,
+      supplierId: null,
+      orderType: "sale",
+      status: "confirmed",
+      totalAmount: "2398.00",
+      orderDate: new Date(Date.now() - 86400000 * 5), // 5 days ago
+      notes: "Bulk order for corporate client",
+    };
+
+    const order2: Order = {
+      id: 2,
+      orderNumber: "PO-001",
+      clientId: null,
+      supplierId: 1,
+      orderType: "purchase",
+      status: "pending",
+      totalAmount: "15000.00",
+      orderDate: new Date(Date.now() - 86400000 * 2), // 2 days ago
+      notes: "Quarterly inventory restock",
+    };
+
+    this.orders.set(1, order1);
+    this.orders.set(2, order2);
+
+    // Seed stock movements
+    const movements = [
+      {
+        id: 1,
+        productId: 1,
+        movementType: "in" as const,
+        quantity: 50,
+        reason: "Initial stock",
+        userId: 1,
+        createdAt: new Date(Date.now() - 86400000 * 10),
+      },
+      {
+        id: 2,
+        productId: 2,
+        movementType: "in" as const,
+        quantity: 25,
+        reason: "Supplier delivery",
+        userId: 1,
+        createdAt: new Date(Date.now() - 86400000 * 8),
+      },
+      {
+        id: 3,
+        productId: 1,
+        movementType: "out" as const,
+        quantity: 3,
+        reason: "Sale to customer",
+        userId: 1,
+        createdAt: new Date(Date.now() - 86400000 * 3),
+      },
+      {
+        id: 4,
+        productId: 3,
+        movementType: "out" as const,
+        quantity: 5,
+        reason: "Quality control issue",
+        userId: 1,
+        createdAt: new Date(Date.now() - 86400000 * 1),
+      },
+    ];
+
+    movements.forEach(movement => {
+      this.stockMovements.set(movement.id, movement as StockMovement);
+    });
+
+    this.currentId = 10;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -363,6 +436,15 @@ export class MemStorage implements IStorage {
     return newOrder;
   }
 
+  async updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined> {
+    const existing = this.orders.get(id);
+    if (!existing) return undefined;
+
+    const updated: Order = { ...existing, ...orderData };
+    this.orders.set(id, updated);
+    return updated;
+  }
+
   async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
     const order = this.orders.get(id);
     if (!order) return undefined;
@@ -390,7 +472,7 @@ export class MemStorage implements IStorage {
     monthlyRevenue: number;
   }> {
     const products = Array.from(this.products.values());
-    const lowStockProducts = products.filter(p => p.currentStock <= p.minStockLevel);
+    const lowStockProducts = products.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 0));
     
     // Calculate monthly revenue from orders
     const orders = Array.from(this.orders.values());

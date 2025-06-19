@@ -248,9 +248,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (movement.productId) {
         const product = await storage.getProduct(movement.productId);
         if (product) {
+          const currentStock = product.currentStock || 0;
           const newStock = movement.movementType === 'in' 
-            ? product.currentStock + movement.quantity
-            : product.currentStock - movement.quantity;
+            ? currentStock + movement.quantity
+            : currentStock - movement.quantity;
           await storage.updateProductStock(movement.productId, Math.max(0, newStock));
         }
       }
@@ -284,6 +285,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid order data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create order" });
+    }
+  });
+
+  app.put("/api/orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertOrderSchema.partial().parse(req.body);
+      const order = await storage.updateOrder(id, validatedData);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid order data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update order" });
+    }
+  });
+
+  app.put("/api/orders/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      const order = await storage.updateOrderStatus(id, status);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update order status" });
     }
   });
 

@@ -37,14 +37,14 @@ export default function Sidebar() {
           
           return (
             <Link key={item.name} href={item.href}>
-              <a className={`sidebar-nav flex items-center space-x-3 p-3 rounded-lg transition-all ${
+              <div className={`sidebar-nav flex items-center space-x-3 p-3 rounded-lg transition-all cursor-pointer ${
                 isActive 
                   ? "active text-white bg-primary/20 border-l-3 border-primary" 
                   : "text-gray-300 hover:text-white"
               }`}>
                 <Icon className="w-5 h-5" />
                 <span>{item.name}</span>
-              </a>
+              </div>
             </Link>
           );
         })}
