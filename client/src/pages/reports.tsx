@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, TrendingUp, Package, DollarSign, AlertTriangle, BarChart3, Download, Filter } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { addDays, format } from "date-fns";
-import { generatePDFReport, generateExcelReport, formatCurrency, formatDate } from "@/lib/reportUtils";
+import { generatePDFReport, generateExcelReport, generateCSVReport, formatCurrency, formatDate } from "@/lib/reportUtils";
 
 interface ReportData {
   id: string;
@@ -37,6 +37,49 @@ export default function Reports() {
       type: "stock",
       generatedAt: "2024-12-19 14:30",
       status: "ready",
+      reportData: {
+        title: "Stock Movement Report - December 2024",
+        data: [
+          {
+            date: "2024-12-19",
+            product: "iPhone 15 Pro Max",
+            sku: "SKU-001",
+            type: "IN",
+            quantity: 50,
+            reason: "Purchase Order"
+          },
+          {
+            date: "2024-12-18",
+            product: "MacBook Pro 16\"",
+            sku: "SKU-002",
+            type: "OUT",
+            quantity: 5,
+            reason: "Sale"
+          },
+          {
+            date: "2024-12-17",
+            product: "AirPods Pro",
+            sku: "SKU-003",
+            type: "IN",
+            quantity: 100,
+            reason: "Restocking"
+          }
+        ],
+        columns: [
+          { header: 'Date', dataKey: 'date' },
+          { header: 'Product', dataKey: 'product' },
+          { header: 'SKU', dataKey: 'sku' },
+          { header: 'Type', dataKey: 'type' },
+          { header: 'Quantity', dataKey: 'quantity' },
+          { header: 'Reason', dataKey: 'reason' },
+        ],
+        summary: {
+          'Total Movements': '3',
+          'Items In': '150',
+          'Items Out': '5',
+          'Net Change': '+145'
+        }
+      }
     },
     {
       id: "2", 
@@ -44,13 +87,86 @@ export default function Reports() {
       type: "financial",
       generatedAt: "2024-12-19 10:15",
       status: "ready",
+      reportData: {
+        title: "Financial Summary - Q4 2024",
+        data: [
+          {
+            metric: "Sales Revenue",
+            amount: "$125,500.00",
+            percentage: "100%"
+          },
+          {
+            metric: "Purchase Costs",
+            amount: "$78,500.00",
+            percentage: "62.5%"
+          },
+          {
+            metric: "Gross Profit",
+            amount: "$47,000.00",
+            percentage: "37.5%"
+          }
+        ],
+        columns: [
+          { header: 'Metric', dataKey: 'metric' },
+          { header: 'Amount', dataKey: 'amount' },
+          { header: 'Percentage', dataKey: 'percentage' },
+        ],
+        summary: {
+          'Profit Margin': '37.5%',
+          'Revenue Growth': '+15.2%',
+          'Cost Ratio': '62.5%'
+        }
+      }
     },
     {
       id: "3",
-      name: "AI Sales Projection - January 2025",
-      type: "ai-projection",
+      name: "Inventory Valuation - January 2025",
+      type: "inventory",
       generatedAt: "2024-12-19 09:45",
       status: "ready",
+      reportData: {
+        title: "Inventory Valuation Report - January 2025",
+        data: [
+          {
+            sku: "SKU-001",
+            name: "iPhone 15 Pro Max",
+            currentStock: 45,
+            costPrice: "$1,100.00",
+            stockValue: "$49,500.00",
+            turnover: "2.5"
+          },
+          {
+            sku: "SKU-002",
+            name: "MacBook Pro 16\"",
+            currentStock: 12,
+            costPrice: "$2,200.00",
+            stockValue: "$26,400.00",
+            turnover: "1.8"
+          },
+          {
+            sku: "SKU-003",
+            name: "AirPods Pro",
+            currentStock: 85,
+            costPrice: "$180.00",
+            stockValue: "$15,300.00",
+            turnover: "4.2"
+          }
+        ],
+        columns: [
+          { header: 'SKU', dataKey: 'sku' },
+          { header: 'Product Name', dataKey: 'name' },
+          { header: 'Stock Qty', dataKey: 'currentStock' },
+          { header: 'Cost Price', dataKey: 'costPrice' },
+          { header: 'Stock Value', dataKey: 'stockValue' },
+          { header: 'Turnover Rate', dataKey: 'turnover' },
+        ],
+        summary: {
+          'Total Inventory Value': '$91,200.00',
+          'Total Products': '3',
+          'Average Stock Value': '$30,400.00',
+          'Total Stock Units': '142'
+        }
+      }
     },
   ]);
 
@@ -278,6 +394,221 @@ export default function Reports() {
           };
           break;
 
+        case 'low-stock-alert':
+          const lowStockResponse = await fetch('/api/products');
+          const allProducts = await lowStockResponse.json();
+          const lowStockProducts = allProducts.filter((product: any) => 
+            product.currentStock <= (product.reorderPoint || 10)
+          );
+          
+          reportData = {
+            title: 'Low Stock Alert Report',
+            data: lowStockProducts.map((product: any) => ({
+              sku: product.sku,
+              name: product.name,
+              currentStock: product.currentStock || 0,
+              reorderPoint: product.reorderPoint || 10,
+              shortage: (product.reorderPoint || 10) - (product.currentStock || 0),
+              category: product.category || 'Unknown',
+              supplier: product.supplier || 'N/A',
+              urgency: (product.currentStock || 0) === 0 ? 'Critical' : 
+                      (product.currentStock || 0) <= 5 ? 'High' : 'Medium'
+            })),
+            columns: [
+              { header: 'SKU', dataKey: 'sku' },
+              { header: 'Product Name', dataKey: 'name' },
+              { header: 'Current Stock', dataKey: 'currentStock' },
+              { header: 'Reorder Point', dataKey: 'reorderPoint' },
+              { header: 'Shortage', dataKey: 'shortage' },
+              { header: 'Category', dataKey: 'category' },
+              { header: 'Urgency', dataKey: 'urgency' },
+            ],
+            summary: {
+              'Total Low Stock Items': lowStockProducts.length.toString(),
+              'Critical Items (0 stock)': lowStockProducts.filter((p: any) => (p.currentStock || 0) === 0).length.toString(),
+              'High Priority Items': lowStockProducts.filter((p: any) => (p.currentStock || 0) <= 5).length.toString(),
+            },
+          };
+          break;
+
+        case 'sales-trends':
+          const ordersResponse = await fetch('/api/orders');
+          const ordersData = await ordersResponse.json();
+          
+          // Group orders by month for trend analysis
+          const monthlyData = ordersData.reduce((acc: any, order: any) => {
+            const month = new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+            if (!acc[month]) {
+              acc[month] = { month, orders: 0, revenue: 0, items: 0 };
+            }
+            acc[month].orders += 1;
+            acc[month].revenue += order.totalAmount || 0;
+            acc[month].items += order.items?.length || 0;
+            return acc;
+          }, {});
+          
+          reportData = {
+            title: 'Sales Trends Analysis Report',
+            data: Object.values(monthlyData).map((data: any) => ({
+              month: data.month,
+              orders: data.orders,
+              revenue: formatCurrency(data.revenue),
+              averageOrderValue: formatCurrency(data.revenue / data.orders),
+              totalItems: data.items,
+              growth: '+12.5%' // This would be calculated from previous period
+            })),
+            columns: [
+              { header: 'Month', dataKey: 'month' },
+              { header: 'Orders', dataKey: 'orders' },
+              { header: 'Revenue', dataKey: 'revenue' },
+              { header: 'Avg Order Value', dataKey: 'averageOrderValue' },
+              { header: 'Items Sold', dataKey: 'totalItems' },
+              { header: 'Growth', dataKey: 'growth' },
+            ],
+            summary: {
+              'Total Periods': Object.keys(monthlyData).length.toString(),
+              'Average Monthly Revenue': formatCurrency(Object.values(monthlyData).reduce((sum: number, data: any) => sum + data.revenue, 0) / Object.keys(monthlyData).length),
+              'Best Month': (Object.values(monthlyData) as any[]).sort((a: any, b: any) => b.revenue - a.revenue)[0]?.month || 'N/A'
+            },
+          };
+          break;
+
+        case 'returns-repairs':
+          // For now, we'll use sample data since returns/repairs might not be fully implemented
+          reportData = {
+            title: 'Returns & Repairs Report',
+            data: [
+              {
+                date: formatDate(new Date()),
+                product: 'iPhone 15 Pro Max',
+                sku: 'SKU-001',
+                type: 'Return',
+                reason: 'Customer Dissatisfaction',
+                status: 'Processed',
+                refundAmount: formatCurrency(1200),
+                resolutionTime: '2 days'
+              },
+              {
+                date: formatDate(new Date(Date.now() - 86400000)),
+                product: 'MacBook Pro 16"',
+                sku: 'SKU-002',
+                type: 'Repair',
+                reason: 'Hardware Defect',
+                status: 'In Progress',
+                refundAmount: formatCurrency(0),
+                resolutionTime: 'Pending'
+              }
+            ],
+            columns: [
+              { header: 'Date', dataKey: 'date' },
+              { header: 'Product', dataKey: 'product' },
+              { header: 'SKU', dataKey: 'sku' },
+              { header: 'Type', dataKey: 'type' },
+              { header: 'Reason', dataKey: 'reason' },
+              { header: 'Status', dataKey: 'status' },
+              { header: 'Refund Amount', dataKey: 'refundAmount' },
+              { header: 'Resolution Time', dataKey: 'resolutionTime' },
+            ],
+            summary: {
+              'Total Cases': '2',
+              'Returns': '1',
+              'Repairs': '1',
+              'Average Resolution Time': '2 days'
+            },
+          };
+          break;
+
+        case 'warehouse-locations':
+          reportData = {
+            title: 'Warehouse Location Report',
+            data: [
+              {
+                location: 'A1-01',
+                zone: 'Electronics',
+                product: 'iPhone 15 Pro Max',
+                quantity: 45,
+                capacity: 100,
+                utilization: '45%',
+                lastUpdated: formatDate(new Date())
+              },
+              {
+                location: 'B2-15',
+                zone: 'Electronics',
+                product: 'MacBook Pro 16"',
+                quantity: 12,
+                capacity: 50,
+                utilization: '24%',
+                lastUpdated: formatDate(new Date())
+              },
+              {
+                location: 'C3-08',
+                zone: 'Audio',
+                product: 'AirPods Pro',
+                quantity: 85,
+                capacity: 200,
+                utilization: '42.5%',
+                lastUpdated: formatDate(new Date())
+              }
+            ],
+            columns: [
+              { header: 'Location', dataKey: 'location' },
+              { header: 'Zone', dataKey: 'zone' },
+              { header: 'Product', dataKey: 'product' },
+              { header: 'Quantity', dataKey: 'quantity' },
+              { header: 'Capacity', dataKey: 'capacity' },
+              { header: 'Utilization', dataKey: 'utilization' },
+              { header: 'Last Updated', dataKey: 'lastUpdated' },
+            ],
+            summary: {
+              'Total Locations': '3',
+              'Average Utilization': '37.2%',
+              'Highest Utilization': '45% (A1-01)',
+              'Available Capacity': '208 units'
+            },
+          };
+          break;
+
+        case 'device-replacements':
+          reportData = {
+            title: 'Device Replacements Report',
+            data: [
+              {
+                originalProduct: 'iPhone 14 Pro',
+                replacementProduct: 'iPhone 15 Pro',
+                customer: 'Premium Retail Co.',
+                reason: 'Warranty Upgrade',
+                date: formatDate(new Date()),
+                cost: formatCurrency(200),
+                status: 'Completed'
+              },
+              {
+                originalProduct: 'MacBook Pro 14"',
+                replacementProduct: 'MacBook Pro 16"',
+                customer: 'Tech Solutions Ltd.',
+                reason: 'Damage Replacement',
+                date: formatDate(new Date(Date.now() - 86400000)),
+                cost: formatCurrency(400),
+                status: 'Pending'
+              }
+            ],
+            columns: [
+              { header: 'Original Product', dataKey: 'originalProduct' },
+              { header: 'Replacement Product', dataKey: 'replacementProduct' },
+              { header: 'Customer', dataKey: 'customer' },
+              { header: 'Reason', dataKey: 'reason' },
+              { header: 'Date', dataKey: 'date' },
+              { header: 'Cost', dataKey: 'cost' },
+              { header: 'Status', dataKey: 'status' },
+            ],
+            summary: {
+              'Total Replacements': '2',
+              'Warranty Replacements': '1',
+              'Damage Replacements': '1',
+              'Total Cost': formatCurrency(600)
+            },
+          };
+          break;
+
         default:
           reportData = {
             title: selectedReportType?.name || 'Custom Report',
@@ -315,6 +646,12 @@ export default function Reports() {
     }
   };
 
+  const handleDownloadCSV = (report: ReportData) => {
+    if (report.reportData) {
+      generateCSVReport(report.reportData);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ready':
@@ -334,6 +671,94 @@ export default function Reports() {
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-white">Advanced Reports</h1>
           <p className="text-lg text-gray-300">Generate comprehensive business intelligence reports</p>
+          
+          {/* Quick Test Section */}
+          <div className="mt-4">
+            <Button 
+              onClick={() => {
+                const testReport = {
+                  title: "Test Report - Export Functionality",
+                  data: [
+                    { item: "Sample Product 1", quantity: 100, value: "$1,200.00" },
+                    { item: "Sample Product 2", quantity: 50, value: "$800.00" },
+                    { item: "Sample Product 3", quantity: 75, value: "$950.00" }
+                  ],
+                  columns: [
+                    { header: 'Product', dataKey: 'item' },
+                    { header: 'Quantity', dataKey: 'quantity' },
+                    { header: 'Value', dataKey: 'value' }
+                  ],
+                  summary: {
+                    'Total Items': '225',
+                    'Total Value': '$2,950.00',
+                    'Average Value': '$983.33'
+                  }
+                };
+                generatePDFReport(testReport);
+              }}
+              variant="outline"
+              size="sm"
+              className="mr-2 border-white/10"
+            >
+              Test PDF Export
+            </Button>
+            <Button 
+              onClick={() => {
+                const testReport = {
+                  title: "Test Report - Export Functionality",
+                  data: [
+                    { item: "Sample Product 1", quantity: 100, value: "$1,200.00" },
+                    { item: "Sample Product 2", quantity: 50, value: "$800.00" },
+                    { item: "Sample Product 3", quantity: 75, value: "$950.00" }
+                  ],
+                  columns: [
+                    { header: 'Product', dataKey: 'item' },
+                    { header: 'Quantity', dataKey: 'quantity' },
+                    { header: 'Value', dataKey: 'value' }
+                  ],
+                  summary: {
+                    'Total Items': '225',
+                    'Total Value': '$2,950.00',
+                    'Average Value': '$983.33'
+                  }
+                };
+                generateExcelReport(testReport);
+              }}
+              variant="outline"
+              size="sm"
+              className="mr-2 border-white/10"
+            >
+              Test Excel Export
+            </Button>
+            <Button 
+              onClick={() => {
+                const testReport = {
+                  title: "Test Report - Export Functionality",
+                  data: [
+                    { item: "Sample Product 1", quantity: 100, value: "$1,200.00" },
+                    { item: "Sample Product 2", quantity: 50, value: "$800.00" },
+                    { item: "Sample Product 3", quantity: 75, value: "$950.00" }
+                  ],
+                  columns: [
+                    { header: 'Product', dataKey: 'item' },
+                    { header: 'Quantity', dataKey: 'quantity' },
+                    { header: 'Value', dataKey: 'value' }
+                  ],
+                  summary: {
+                    'Total Items': '225',
+                    'Total Value': '$2,950.00',
+                    'Average Value': '$983.33'
+                  }
+                };
+                generateCSVReport(testReport);
+              }}
+              variant="outline"
+              size="sm"
+              className="border-white/10"
+            >
+              Test CSV Export
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="generate" className="w-full">
@@ -480,6 +905,15 @@ export default function Reports() {
                             >
                               <Download className="h-4 w-4 mr-2" />
                               Excel
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="border-white/10"
+                              onClick={() => handleDownloadCSV(report)}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              CSV
                             </Button>
                           </div>
                         )}

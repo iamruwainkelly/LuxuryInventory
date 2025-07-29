@@ -319,6 +319,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports and AI Analytics
+  app.get("/api/reports/financial", async (req, res) => {
+    try {
+      const orders = await storage.getOrders();
+      const products = await storage.getProducts();
+      
+      // Calculate financial metrics
+      const salesRevenue = orders.reduce((sum, order) => {
+        const amount = typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : (order.totalAmount || 0);
+        return sum + amount;
+      }, 0);
+      
+      const purchaseCosts = products.reduce((sum, product) => {
+        const costPrice = typeof product.costPrice === 'string' ? parseFloat(product.costPrice) : (product.costPrice || 0);
+        // Estimate sold quantity based on stock levels and simple logic
+        const estimatedSold = Math.max(0, 100 - (product.currentStock || 0)); // Assume starting stock was 100
+        return sum + (estimatedSold * costPrice);
+      }, 0);
+      
+      const grossProfit = salesRevenue - purchaseCosts;
+      const profitMargin = salesRevenue > 0 ? (grossProfit / salesRevenue) * 100 : 0;
+      
+      res.json({
+        salesRevenue,
+        purchaseCosts,
+        grossProfit,
+        totalTransactions: orders.length,
+        profitMargin
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate financial report" });
+    }
+  });
+
+  app.get("/api/reports/ai-projections", async (req, res) => {
+    try {
+      const products = await storage.getProducts();
+      const orders = await storage.getOrders();
+      const movements = await storage.getStockMovements();
+      
+      // Enhanced AI projections with more sophisticated calculations
+      const projections = products.map((product, index) => {
+        // Calculate historical sales data
+        const productMovements = movements.filter(m => m.productId === product.id);
+        const outMovements = productMovements.filter(m => m.movementType === 'out');
+        const inMovements = productMovements.filter(m => m.movementType === 'in');
+        
+        // Calculate velocity (items sold per week)
+        const totalSalesQuantity = outMovements.reduce((sum, m) => sum + m.quantity, 0);
+        const totalInboundQuantity = inMovements.reduce((sum, m) => sum + m.quantity, 0);
+        
+        // Assume 3 months of historical data for velocity calculation
+        const avgWeeklySales = totalSalesQuantity > 0 ? totalSalesQuantity / 12 : Math.max(1, index + 1); // 12 weeks
+        
+        // Apply seasonal and trend adjustments
+        const seasonalFactor = 1 + (Math.sin((Date.now() / (1000 * 60 * 60 * 24 * 30)) * Math.PI) * 0.15); // Monthly seasonality
+        const trendFactor = 1 + ((Math.random() - 0.5) * 0.1); // Random trend variation ±5%
+        const marketGrowthFactor = 1.05; // Assume 5% market growth
+        
+        // Calculate 30-day projection
+        const projectedSales = Math.round(avgWeeklySales * 4.3 * seasonalFactor * trendFactor * marketGrowthFactor); // 4.3 weeks per month
+        
+        // Calculate revenue projection
+        const sellingPrice = typeof product.sellingPrice === 'string' ? 
+          parseFloat(product.sellingPrice) : (product.sellingPrice || 100);
+        const projectedRevenue = projectedSales * sellingPrice;
+        
+        // Enhanced confidence calculation
+        const dataPoints = productMovements.length;
+        
+        // Estimate order frequency based on out movements (simplified approach)
+        // In a real implementation, you'd query order_items table
+        const orderFrequency = outMovements.length; // Approximate order frequency from stock movements
+        
+        // Base confidence on data availability and consistency
+        let confidence = 65; // Base confidence
+        confidence += Math.min(20, dataPoints * 2); // More data = higher confidence
+        confidence += Math.min(10, orderFrequency); // Order frequency adds confidence
+        
+        // Reduce confidence for products with erratic sales patterns
+        if (outMovements.length > 0) {
+          const salesVariance = outMovements.reduce((variance, movement, idx, arr) => {
+            const mean = totalSalesQuantity / arr.length;
+            return variance + Math.pow(movement.quantity - mean, 2);
+          }, 0) / outMovements.length;
+          
+          if (salesVariance > avgWeeklySales * 2) {
+            confidence -= 10; // High variance reduces confidence
+          }
+        }
+        
+        confidence = Math.min(95, Math.max(60, Math.round(confidence)));
+        
+        // Smart reorder recommendation
+        const currentStock = product.currentStock || 0;
+        const minStockLevel = product.minStockLevel || 10;
+        const leadTimeWeeks = 2; // Assume 2-week lead time
+        const safetyStock = Math.round(avgWeeklySales * 1.5); // 1.5 weeks safety stock
+        
+        const projectedStockOut = currentStock - (avgWeeklySales * leadTimeWeeks);
+        const reorderRecommendation = projectedStockOut < minStockLevel ? 
+          Math.round(avgWeeklySales * 8 + safetyStock) : 0; // 8 weeks of stock
+        
+        // Add risk assessment
+        const riskLevel = currentStock <= minStockLevel ? 'High' : 
+                         currentStock <= minStockLevel * 2 ? 'Medium' : 'Low';
+        
+        return {
+          productId: product.id,
+          productName: product.name,
+          projectionPeriod: "Next 30 days",
+          projectedSales,
+          projectedRevenue,
+          confidence,
+          reorderRecommendation,
+          currentStock,
+          avgWeeklySales: Math.round(avgWeeklySales * 10) / 10, // Round to 1 decimal
+          riskLevel,
+          stockOutRisk: projectedStockOut < 0 ? 'High' : projectedStockOut < minStockLevel ? 'Medium' : 'Low',
+          trend: trendFactor > 1.02 ? 'up' : trendFactor < 0.98 ? 'down' : 'stable'
+        };
+      });
+      
+      // Sort by confidence and projected revenue for better insights
+      const sortedProjections = projections.sort((a, b) => {
+        // Prioritize high-confidence, high-revenue products
+        const scoreA = (a.confidence / 100) * a.projectedRevenue;
+        const scoreB = (b.confidence / 100) * b.projectedRevenue;
+        return scoreB - scoreA;
+      });
+      
+      res.json(sortedProjections);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate AI projections" });
+    }
+  });
+
+  app.get("/api/reports/stock-summary", async (req, res) => {
+    try {
+      const products = await storage.getProducts();
+      const movements = await storage.getStockMovements();
+      
+      const stockSummary = products.map(product => {
+        // Calculate turnover based on movement history
+        const productMovements = movements.filter(m => m.productId === product.id);
+        const outMovements = productMovements.filter(m => m.movementType === 'out');
+        const totalOut = outMovements.reduce((sum, m) => sum + m.quantity, 0);
+        
+        const costPrice = typeof product.costPrice === 'string' ? 
+          parseFloat(product.costPrice) : (product.costPrice || 0);
+        const stockValue = (product.currentStock || 0) * costPrice;
+        const stockTurnover = (product.currentStock || 0) > 0 ? totalOut / (product.currentStock || 1) : 0;
+        
+        return {
+          id: product.id,
+          sku: product.sku,
+          name: product.name,
+          currentStock: product.currentStock || 0,
+          costPrice,
+          stockValue,
+          stockTurnover: Math.max(0, stockTurnover),
+          reorderPoint: product.minStockLevel || 10
+        };
+      });
+      
+      res.json(stockSummary);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate stock summary" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

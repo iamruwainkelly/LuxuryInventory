@@ -1,0 +1,54 @@
+{
+  "id": "luxury-inventory",
+  "title": "LuxuryInventory",
+  "subtitle": "Enterprise Luxury Inventory Management System",
+  "description": "Comprehensive luxury inventory management system with AI-powered forecasting, automated reporting, and real-time analytics for high-end retail operations.",
+  "longDescription": "LuxuryInventory is a full-stack enterprise inventory management system specifically designed for luxury retail operations. Built with React 18 and TypeScript, it features AI-powered demand forecasting, automated PDF/Excel reporting, real-time analytics dashboards, and comprehensive stock management capabilities. The system includes supplier management, order tracking, returns processing, and ERP integration readiness.",
+  "role": "Full-Stack Developer",
+  "tags": ["React 18", "TypeScript", "Node.js", "PostgreSQL", "AI Forecasting", "Enterprise"],
+  "technologies": [
+    "React 18",
+    "TypeScript", 
+    "Node.js",
+    "Express.js",
+    "PostgreSQL",
+    "Drizzle ORM",
+    "TailwindCSS",
+    "Recharts",
+    "PDF Generation",
+    "AI/ML Algorithms"
+  ],
+  "techStack": [
+    "React 18",
+    "TypeScript", 
+    "Node.js",
+    "Express.js",
+    "PostgreSQL",
+    "Drizzle ORM",
+    "TailwindCSS",
+    "Recharts",
+    "PDF Generation",
+    "AI/ML"
+  ],
+  "github": "https://github.com/iamruwainkelly/LuxuryInventory",
+  "liveDemo": "/luxury-inventory",
+  "status": "completed",
+  "mockData": {
+    "totalItems": "12,847",
+    "categories": "27",
+    "reports": "156",
+    "accuracy": "97.3%"
+  },
+  "charts": {
+    "inventoryStatus": {
+      "labels": ["In Stock", "Low Stock", "Out of Stock", "On Order"],
+      "data": [68, 22, 6, 4]
+    }
+  },
+  "architecture": {
+    "type": "Full-Stack Web Application",
+    "components": ["React Frontend", "Node.js API", "PostgreSQL Database", "AI Engine"],
+    "regions": "Multi-deployment Ready",
+    "environments": ["Development", "Staging", "Production"]
+  }
+}
